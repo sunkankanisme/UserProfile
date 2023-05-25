@@ -57,8 +57,9 @@ object HBaseBulkLoader {
             // 过滤数据
             .filter(line => null != line)
             .distinct()
-            // 提取数据字段，构建二元组(RowKey, KeyValue)
             /*
+             * 提取数据字段，构建二元组(RowKey, KeyValue)
+             *
              * Key: rowKey + cf + column + version(timestamp)
              * Value: ColumnValue
              */
@@ -67,30 +68,26 @@ object HBaseBulkLoader {
             .sortByKey()
 
         // TODO：构建Job，设置相关配置信息，主要为输出格式
-        // a. 读取配置信息
+        // 读取配置信息
         val conf: Configuration = HBaseConfiguration.create()
         conf.set("hbase.mapreduce.hfileoutputformat.table.name", tableName)
 
-        // b. 如果输出目录存在，删除
-        val dfs: FileSystem = FileSystem.get(conf)
+        // 如果输出目录存在，删除
         val outputPath: Path = new Path(outputDir)
-        if (dfs.exists(outputPath)) {
-            dfs.delete(outputPath, true)
-        }
-        dfs.close()
+        deleteExistDir(conf, outputPath)
 
-        // TODO：c. 配置HFileOutputFormat2输出
+        // 配置 HFileOutputFormat2 输出
         val conn: Connection = ConnectionFactory.createConnection(conf)
-        val htableName = TableName.valueOf(tableName)
-        val table: Table = conn.getTable(htableName)
+        val hTableName = TableName.valueOf(tableName)
+        val table: Table = conn.getTable(hTableName)
 
         HFileOutputFormat2.configureIncrementalLoad(
             Job.getInstance(conf),
             table,
-            conn.getRegionLocator(htableName)
+            conn.getRegionLocator(hTableName)
         )
 
-        // TODO： 3. 保存数据为HFile文件
+        // 保存数据为HFile文件
         keyValuesRDD.saveAsNewAPIHadoopFile(
             outputDir,
             classOf[ImmutableBytesWritable],
@@ -99,9 +96,9 @@ object HBaseBulkLoader {
             conf
         )
 
-        // TODO：4. 将输出HFile加载到HBase表中
+        // 将输出HFile加载到HBase表中
         val load = new LoadIncrementalHFiles(conf)
-        load.doBulkLoad(outputPath, conn.getAdmin, table, conn.getRegionLocator(htableName))
+        load.doBulkLoad(outputPath, conn.getAdmin, table, conn.getRegionLocator(hTableName))
 
         // 应用结束，关闭资源
         sc.stop()
@@ -110,7 +107,7 @@ object HBaseBulkLoader {
     /**
      * 依据不同表的数据文件，提取对应数据，封装到KeyValue对象中
      */
-    def getLineToData(line: String, family: String, fieldNames: TreeMap[String, Int]): List[(ImmutableBytesWritable, KeyValue)] = {
+    private def getLineToData(line: String, family: String, fieldNames: TreeMap[String, Int]): List[(ImmutableBytesWritable, KeyValue)] = {
         val length = fieldNames.size
 
         // 分割字符串
@@ -125,10 +122,9 @@ object HBaseBulkLoader {
         // 列簇
         val columnFamily: Array[Byte] = Bytes.toBytes(family)
 
-        // 构建KeyValue对象
+        // 构建 KeyValue 对象
         fieldNames.toList.map {
             case (fieldName, fieldIndex) =>
-                // KeyValue 实例对象
                 val keyValue = new KeyValue(
                     rowKey,
                     columnFamily,
@@ -138,5 +134,14 @@ object HBaseBulkLoader {
 
                 (ibw, keyValue)
         }
+    }
+
+    private def deleteExistDir(conf: Configuration, outputPath: Path): Unit = {
+        val dfs: FileSystem = FileSystem.get(conf)
+        if (dfs.exists(outputPath)) {
+            dfs.delete(outputPath, true)
+        }
+
+        dfs.close()
     }
 }
