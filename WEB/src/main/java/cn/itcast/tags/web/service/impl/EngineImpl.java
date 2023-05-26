@@ -4,7 +4,6 @@ import cn.itcast.tags.web.bean.dto.ModelDto;
 import cn.itcast.tags.web.service.Engine;
 import org.springframework.stereotype.Service;
 
-
 @Service
 public class EngineImpl implements Engine {
     @Override
@@ -14,6 +13,6 @@ public class EngineImpl implements Engine {
 
     @Override
     public void stopModel(ModelDto model) {
-
+        System.out.println(">>>>> TRY STOP OOZIE TASK ...");
     }
 }

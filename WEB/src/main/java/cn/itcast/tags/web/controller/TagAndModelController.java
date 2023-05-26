@@ -12,9 +12,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.UUID;
 
@@ -89,10 +89,6 @@ public class TagAndModelController {
 
     /**
      * 启动/停止模型
-     *
-     * @param id
-     * @param modelDto
-     * @return
      */
     @PostMapping("tags/{id}/model")
     public HttpResult changeModelState(@PathVariable Long id, @RequestBody ModelDto modelDto) {
@@ -103,19 +99,19 @@ public class TagAndModelController {
 
     /**
      * 文件上传
-     *
-     * @param file
-     * @return
      */
     @PostMapping("/tags/upload")
     public HttpResult<String> postTagsFile(@RequestParam("file") MultipartFile file) {
         String basePath = "/apps/temp/jars/";
+
         // 创建Jar包名字
-        String fileName = UUID.randomUUID().toString() + ".jar";
+        String fileName = UUID.randomUUID() + ".jar";
         String path = basePath + fileName;
+
         try {
+            System.out.println("TRY UPLOAD FILE [" + path + "] TO HDFS");
             InputStream inputStream = file.getInputStream();
-            IOUtils.copy(inputStream, new FileOutputStream(new File("temp.jar")));
+            IOUtils.copy(inputStream, Files.newOutputStream(new File("temp.jar").toPath()));
             // HdfsTools.build().uploadLocalFile2HDFS("temp.jar", path);
             return new HttpResult<>(Codes.SUCCESS, "", "hdfs://bigdata-cdh01.itcast.cn:8020" + path);
         } catch (IOException e) {
@@ -123,6 +119,5 @@ public class TagAndModelController {
             return new HttpResult<>(Codes.ERROR, "文件上传失败", null);
         }
     }
-
 
 }
