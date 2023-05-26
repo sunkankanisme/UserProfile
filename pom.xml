@@ -11,6 +11,7 @@
     <modules>
         <module>ETL</module>
         <module>WEB</module>
+        <module>MODEL</module>
     </modules>
 
     <properties>

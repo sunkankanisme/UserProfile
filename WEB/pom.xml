@@ -14,7 +14,7 @@
     <artifactId>WEB</artifactId>
     <groupId>cn.itcast.tags</groupId>
     <version>1.0.0</version>
-    <name>tags-web</name>
+    <name>WEB</name>
 
     <properties>
         <java.version>1.8</java.version>
