@@ -8,14 +8,20 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.storage.StorageLevel
 
-trait BasicTagModel extends Logging {
+/*
+ * 标签基类，标签属性信息
+ */
+abstract class AbstractModel(modelName: String, modelType: ModelType) extends Logging {
+
+    // 设置Spark应用程序运行的用户：root, 默认情况下为当前系统用户
+    System.setProperty("user.name", ModelConfig.FS_USER)
+    System.setProperty("HADOOP_USER_NAME", ModelConfig.FS_USER)
 
     // 变量声明
     var spark: SparkSession = _
 
     // 1. 初始化：构建SparkSession实例对象
-    def init(isHive: Boolean = false): Unit = {
-        System.setProperty("HADOOP_USER_NAME", "root")
+    def init(isHive: Boolean): Unit = {
         spark = SparkUtils.createSparkSession(this.getClass, isHive)
     }
 
@@ -67,7 +73,7 @@ trait BasicTagModel extends Logging {
     // 4. 构建标签：依据业务数据和属性标签数据建立标签
     def doTag(businessDF: DataFrame, tagDF: DataFrame): DataFrame
 
-    // 5. 5. 保存画像标签数据至HBase表
+    // 5. 保存画像标签数据至HBase表
     def saveTag(modelDF: DataFrame): Unit = {
         // 存储结果到 HBase
         if (modelDF != null) {
@@ -82,9 +88,7 @@ trait BasicTagModel extends Logging {
 
     // 6. 关闭资源：应用结束，关闭会话实例对象
     def close(): Unit = {
-        if (spark != null) {
-            spark.stop()
-        }
+        if (null != spark) spark.stop()
     }
 
     // 规定标签模型执行流程顺序

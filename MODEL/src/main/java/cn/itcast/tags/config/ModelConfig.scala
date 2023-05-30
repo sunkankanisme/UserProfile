@@ -9,6 +9,14 @@ object ModelConfig {
     // 构建Config对象，读取配置文件
     val config: Config = ConfigFactory.load("config.properties")
 
+    // Spark Application Local Mode
+    lazy val APP_IS_LOCAL: Boolean = config.getBoolean("app.is.local")
+    lazy val APP_SPARK_MASTER: String = config.getString("app.spark.master")
+
+    // Spark Application With Hive
+    lazy val APP_IS_HIVE: Boolean = config.getBoolean("app.is.hive")
+    lazy val APP_HIVE_META_STORE_URL: String = config.getString("app.hive.metastore.uris")
+
     // Model Config
     lazy val MODEL_BASE_PATH: String = config.getString("tag.model.base.path")
 
@@ -56,9 +64,5 @@ object ModelConfig {
     // HDFS Config
     lazy val DEFAULT_FS: String = config.getString("fs.defaultFS")
     lazy val FS_USER: String = config.getString("fs.user")
-
-    // Hive Config
-    lazy val HIVE_METASTORE_URIS: String = config.getString("hive.metastore.uris")
-    lazy val SPARK_SQL_WAREHOUSE_DIR: String = config.getString("spark.sql.warehouse.dir")
 
 }
