@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.sunk</groupId>
-        <artifactId>UserPortrait</artifactId>
+        <artifactId>UserProfile</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
 
