@@ -90,7 +90,9 @@ trait BasicModel extends Logging {
     // 5. 5. 保存画像标签数据至HBase表
     def saveTag(modelDF: DataFrame): Unit = {
         // 存储结果到 HBase
-        HBaseTools.write(modelDF, "hadoop101", "2181", "tbl_profile", "detail", "userId")
+        if (modelDF != null) {
+            HBaseTools.write(modelDF, "hadoop101", "2181", "tbl_profile", "detail", "userId")
+        }
     }
 
     // 6. 关闭资源：应用结束，关闭会话实例对象

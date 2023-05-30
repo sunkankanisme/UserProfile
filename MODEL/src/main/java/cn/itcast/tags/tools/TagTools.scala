@@ -7,7 +7,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 /**
  * 针对标签进行相关操作工具类
  */
-class TagTools {
+object TagTools {
 
     /**
      * 将[属性标签]数据中[规则：rule与名称：name]转换为[Map集合]
@@ -15,7 +15,7 @@ class TagTools {
      * @param tagDF 属性标签数据
      * @return Map 集合
      */
-    def convertMap(tagDF: DataFrame): Map[String, String] = {
+    private def convertMap(tagDF: DataFrame): Map[String, String] = {
         import tagDF.sparkSession.implicits._
         tagDF
             // 获取属性标签数据
