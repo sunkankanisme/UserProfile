@@ -2,10 +2,9 @@ package cn.itcast.tags.models
 
 import cn.itcast.tags.config.ModelConfig
 import cn.itcast.tags.meta.HBaseMeta
-import cn.itcast.tags.tools.HBaseTools
 import cn.itcast.tags.utils.SparkUtils
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 import org.apache.spark.storage.StorageLevel
 
 /*
@@ -53,13 +52,24 @@ abstract class AbstractModel(modelName: String, modelType: ModelType) extends Lo
         if ("hbase".equals(tagRuleMap("inType").toLowerCase())) {
             // 封装标签规则中的数据源信息至 HBaseMeta 对象中
             val hBaseMeta = HBaseMeta.getHBaseMeta(tagRuleMap)
-            // 从 HBase 加载数据
-            businessDF = HBaseTools.read(spark,
-                hBaseMeta.zkHosts,
-                hBaseMeta.zkPort,
-                hBaseMeta.hbaseTable,
-                hBaseMeta.family,
-                hBaseMeta.selectFieldNames.split(","))
+            // // 使用 HBaseTools 从 HBase 加载数据
+            // businessDF = HBaseTools.read(spark,
+            //     hBaseMeta.zkHosts,
+            //     hBaseMeta.zkPort,
+            //     hBaseMeta.hbaseTable,
+            //     hBaseMeta.family,
+            //     hBaseMeta.selectFieldNames.split(","))
+
+            // 使用自定义数据源从 HBase 加载数据
+            businessDF = spark.read
+                // 指定包的位置[cn.itcast.tags.spark.hbase]，注册数据源之后可以使用 [hbase] 简短名称
+                .format("hbase")
+                .option("zkHosts", hBaseMeta.zkHosts)
+                .option("zkPort", hBaseMeta.zkPort)
+                .option("hbaseTable", hBaseMeta.hbaseTable)
+                .option("family", hBaseMeta.family)
+                .option("selectFields", hBaseMeta.selectFieldNames)
+                .load()
         } else {
             System.exit(0)
         }
@@ -77,12 +87,22 @@ abstract class AbstractModel(modelName: String, modelType: ModelType) extends Lo
     def saveTag(modelDF: DataFrame): Unit = {
         // 存储结果到 HBase
         if (modelDF != null) {
-            HBaseTools.write(modelDF,
-                ModelConfig.PROFILE_TABLE_ZK_HOSTS,
-                ModelConfig.PROFILE_TABLE_ZK_PORT,
-                ModelConfig.PROFILE_TABLE_NAME,
-                ModelConfig.PROFILE_TABLE_FAMILY_DETAIL,
-                ModelConfig.PROFILE_TABLE_ROWKEY_COL)
+            // HBaseTools.write(modelDF,
+            //     ModelConfig.PROFILE_TABLE_ZK_HOSTS,
+            //     ModelConfig.PROFILE_TABLE_ZK_PORT,
+            //     ModelConfig.PROFILE_TABLE_NAME,
+            //     ModelConfig.PROFILE_TABLE_FAMILY_DETAIL,
+            //     ModelConfig.PROFILE_TABLE_ROWKEY_COL)
+
+            modelDF.write
+                .mode(SaveMode.Overwrite)
+                .format("hbase")
+                .option("zkHosts", ModelConfig.PROFILE_TABLE_ZK_HOSTS)
+                .option("zkPort", ModelConfig.PROFILE_TABLE_ZK_PORT)
+                .option("hbaseTable", ModelConfig.PROFILE_TABLE_NAME)
+                .option("family", ModelConfig.PROFILE_TABLE_FAMILY_DETAIL)
+                .option("rowKeyColumn", ModelConfig.PROFILE_TABLE_ROWKEY_COL)
+                .save()
         }
     }
 
