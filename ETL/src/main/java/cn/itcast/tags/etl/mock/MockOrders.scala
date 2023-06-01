@@ -1,10 +1,10 @@
 package cn.itcast.tags.etl.mock
 
-import java.util.Properties
-
 import org.apache.spark.sql.expressions.UserDefinedFunction
+import org.apache.spark.sql.types.IntegerType
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 
+import java.util.Properties
 import scala.util.Random
 
 object MockOrders {
@@ -56,8 +56,10 @@ object MockOrders {
 
         // 4. 自定义UDF函数，处理paymentName
         val payMap: Map[String, String] = Map(
-            "alipay" -> "支付宝", "wxpay" -> "微信支付",
-            "chinapay" -> "银联支付", "cod" -> "货到付款"
+            "alipay" -> "支付宝",
+            "wxpay" -> "微信支付",
+            "chinapay" -> "银联支付",
+            "cod" -> "货到付款"
         )
         val pay_name_udf = udf(
             (paymentcode: String) => {
@@ -71,14 +73,16 @@ object MockOrders {
             .withColumn("memberId", user_id_udf($"memberId"))
             .withColumn("paymentCode", pay_code_udf($"paymentCode"))
             .withColumn("paymentName", pay_name_udf($"paymentCode"))
-            // 修改订单时间
+            // 修改订单时间, 时间范围修改为以当前时间为基准，订单日期在最近一年以内
             .withColumn(
                 "finishTime",
                 unix_timestamp(
-                    date_add(from_unixtime($"finishTime"), 350),
-                    "yyyy-MM-dd"
+                    date_sub(current_date(), floor(rand() * 300).cast(IntegerType)), "yyyy-MM-dd"
                 )
             )
+
+        // 打印测试
+        // newOrdersDF.select("memberId", "paymentCode", "paymentName", "finishTime").show(false)
 
         // 6. 保存订单数据到MySQL表中
         newOrdersDF
