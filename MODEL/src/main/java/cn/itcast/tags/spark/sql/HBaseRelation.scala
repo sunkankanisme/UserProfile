@@ -84,6 +84,7 @@ class HBaseRelation(context: SQLContext,
                     Bytes.toBytes(condition.value)
                 )
 
+                println("HBase Filter: " + filter)
                 filterList.addFilter(filter)
 
                 // 注意：必须要获取需要过滤列的值

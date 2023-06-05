@@ -42,6 +42,7 @@ abstract class AbstractModel(modelName: String, modelType: ModelType) extends Lo
         // 获取和解析规则，转换为 Map 集合
         val tagRules = basicTagDF.filter($"level" === 4).head().getAs[String]("rule")
 
+        println("MySQL Rule: " + tagRules)
         val tagRuleMap = tagRules.split("\\n").map(line => {
             val Array(k, v) = line.trim.split("=")
             (k, v)
@@ -59,6 +60,8 @@ abstract class AbstractModel(modelName: String, modelType: ModelType) extends Lo
             //     hBaseMeta.hbaseTable,
             //     hBaseMeta.family,
             //     hBaseMeta.selectFieldNames.split(","))
+
+            println("HBASE META: " + hBaseMeta)
 
             // 使用自定义数据源从 HBase 加载数据
             businessDF = spark.read
