@@ -69,6 +69,7 @@ abstract class AbstractModel(modelName: String, modelType: ModelType) extends Lo
                 .option("hbaseTable", hBaseMeta.hbaseTable)
                 .option("family", hBaseMeta.family)
                 .option("selectFields", hBaseMeta.selectFieldNames)
+                .option("filterConditions", hBaseMeta.filterConditions)
                 .load()
         } else {
             System.exit(0)
