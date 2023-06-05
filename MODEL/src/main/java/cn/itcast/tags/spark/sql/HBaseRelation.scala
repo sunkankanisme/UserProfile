@@ -89,10 +89,11 @@ class HBaseRelation(context: SQLContext,
                 // 注意：必须要获取需要过滤列的值
                 scan.addColumn(cfBytes, Bytes.toBytes(condition.field))
             })
+
+            // 将过滤器添加到扫描器
+            scan.setFilter(filterList)
         }
 
-        // 将过滤器添加到扫描器
-        scan.setFilter(filterList)
 
         // Bytes.toString(Base64.getEncoder().encode(ProtobufUtil.toScan(scan).toByteArray()));
         conf.set(TableInputFormat.SCAN, TableMapReduceUtil.convertScanToString(scan))
