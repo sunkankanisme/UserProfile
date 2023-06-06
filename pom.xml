@@ -12,6 +12,7 @@
         <module>ETL</module>
         <module>WEB</module>
         <module>MODEL</module>
+        <module>ML</module>
     </modules>
 
     <properties>
