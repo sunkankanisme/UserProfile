@@ -1,5 +1,6 @@
 package cn.itcast.tags.tools
 
+import org.apache.spark.ml.linalg
 import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.sql.functions.{col, udf}
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -15,7 +16,7 @@ object TagTools {
      * @param tagDF 属性标签数据
      * @return Map 集合
      */
-    private def convertMap(tagDF: DataFrame): Map[String, String] = {
+    def convertMap(tagDF: DataFrame): Map[String, String] = {
         import tagDF.sparkSession.implicits._
         tagDF
             // 获取属性标签数据
@@ -102,5 +103,35 @@ object TagTools {
 
         // 3. 返回标签规则
         ruleDF
+    }
+
+    /**
+     * 将KMeans模型中类簇中心点索引对应到属性标签的标签ID
+     *
+     * @param clusterCenters KMeans模型类簇中心点
+     * @param tagDF          属性标签数据
+     */
+    def convertIndexMap(clusterCenters: Array[linalg.Vector], tagDF: DataFrame): Map[Int, String] = {
+        // 1. 获取属性标签（5级标签）数据，选择Name和rule
+        val rulesMap: Map[String, String] = convertMap(tagDF)
+
+        // 2. 获取聚类模型中簇中心及索引
+        val centerIndexArray: Array[((Int, Double), Int)] = clusterCenters
+            .zipWithIndex
+            .map { case (vector, centerIndex) => (centerIndex,
+                vector.toArray.sum)
+            }
+            .sortBy { case (_, score) => -score }
+            .zipWithIndex
+
+        // 3. 聚类类簇关联属性标签属性rule，对应聚类类簇与标签tagName
+        val indexTagMap: Map[Int, String] = centerIndexArray
+            .map { case ((centerIndex, _), index) =>
+                val tagName = rulesMap(index.toString)
+                (centerIndex, tagName)
+            }.toMap
+
+        // 4. 返回类簇索引对应TagId的Map集合
+        indexTagMap
     }
 }
