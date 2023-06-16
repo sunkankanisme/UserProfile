@@ -1,6 +1,5 @@
 package cn.itcast.tags.models.ml
 
-import cn.itcast.tags.config.ModelConfig
 import cn.itcast.tags.models.{AbstractModel, ModelType}
 import cn.itcast.tags.tools.{MLModelTools, TagTools}
 import org.apache.spark.ml.clustering.KMeansModel
@@ -119,8 +118,7 @@ class RfeModel extends AbstractModel("用户活跃度 RFE", ModelType.ML) {
         val rfeFeaturesDF: DataFrame = assembler.transform(rfeScoreDF)
         
         // 3.2 构建 KMeans 最佳模型
-        val modelPath: String = s"${ModelConfig.MODEL_BASE_PATH}/${this.getClass.getSimpleName.stripSuffix("$")}"
-        val model: KMeansModel = MLModelTools.loadModel(rfeFeaturesDF, "kmeans", modelPath).asInstanceOf[KMeansModel]
+        val model: KMeansModel = MLModelTools.loadModel(rfeFeaturesDF, "rfe", this.getClass).asInstanceOf[KMeansModel]
         
         // 3.3 模型预测
         val predictionDF = model.transform(rfeFeaturesDF)

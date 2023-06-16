@@ -1,5 +1,6 @@
 package cn.itcast.tags.tools
 
+import cn.itcast.tags.config.ModelConfig
 import cn.itcast.tags.utils.HdfsUtils
 import org.apache.spark.ml.Model
 import org.apache.spark.ml.classification.DecisionTreeClassificationModel
@@ -20,20 +21,26 @@ object MLModelTools {
       *
       * @return Model 模型
       */
-    def loadModel(dataframe: DataFrame, mlType: String, modelPath: String): Model[_] = {
+    def loadModel(dataframe: DataFrame, mlType: String, modelClass: Class[_]): Model[_] = {
+        val modelPath: String = s"${ModelConfig.MODEL_BASE_PATH}/${modelClass.getSimpleName.stripSuffix("$")}"
+        
         // 1. 判断模型是否存在，存在直接加载
         val conf = dataframe.sparkSession.sparkContext.hadoopConfiguration
         if (HdfsUtils.exists(conf, modelPath)) {
             println(s"正在从【$modelPath】加载模型 ...")
             mlType.toLowerCase match {
-                case "kmeans" => KMeansModel.load(modelPath)
-                case "dtc" => DecisionTreeClassificationModel.load(modelPath)
+                case "rfm" => KMeansModel.load(modelPath)
+                case "rfe" => KMeansModel.load(modelPath)
+                case "psm" => KMeansModel.load(modelPath)
+                case "usg" => DecisionTreeClassificationModel.load(modelPath)
             }
         } else {
             // 2. 如果模型不存在训练模型，获取最佳模型及保存模型
             println(s"正在训练模型 ...")
             val bestModel = mlType.toLowerCase match {
-                case "kmeans" => trainBestKMeansModel(dataframe)
+                case "rfm" => trainBestKMeansModel(dataframe, 5)
+                case "rfe" => trainBestKMeansModel(dataframe, 4)
+                case "psm" => trainBestKMeansModel(dataframe, 5)
             }
             
             // 保存模型
@@ -50,7 +57,7 @@ object MLModelTools {
       *
       * @param dataframe 数据集
       */
-    def trainBestKMeansModel(dataframe: DataFrame): KMeansModel = {
+    def trainBestKMeansModel(dataframe: DataFrame, kClusters: Int): KMeansModel = {
         // 1.设置超参数的值
         val maxIters = Array(5, 10, 20, 50)
         
@@ -61,7 +68,7 @@ object MLModelTools {
                 val kMeans: KMeans = new KMeans()
                     .setFeaturesCol("features")
                     .setPredictionCol("prediction")
-                    .setK(4)
+                    .setK(kClusters)
                     .setMaxIter(maxIter)
                     .setSeed(31)
                 
