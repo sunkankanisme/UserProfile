@@ -2,10 +2,13 @@ package cn.itcast.tags.tools
 
 import cn.itcast.tags.config.ModelConfig
 import cn.itcast.tags.utils.HdfsUtils
-import org.apache.spark.ml.Model
-import org.apache.spark.ml.classification.DecisionTreeClassificationModel
+import org.apache.spark.ml.{Model, Pipeline, PipelineModel}
+import org.apache.spark.ml.classification.{DecisionTreeClassificationModel, DecisionTreeClassifier}
 import org.apache.spark.ml.clustering.{KMeans, KMeansModel}
-import org.apache.spark.ml.evaluation.ClusteringEvaluator
+import org.apache.spark.ml.evaluation.{ClusteringEvaluator, MulticlassClassificationEvaluator}
+import org.apache.spark.ml.feature.{VectorAssembler, VectorIndexer}
+import org.apache.spark.ml.param.ParamMap
+import org.apache.spark.ml.tuning.{CrossValidator, ParamGridBuilder}
 import org.apache.spark.sql.DataFrame
 
 /*
@@ -32,7 +35,7 @@ object MLModelTools {
                 case "rfm" => KMeansModel.load(modelPath)
                 case "rfe" => KMeansModel.load(modelPath)
                 case "psm" => KMeansModel.load(modelPath)
-                case "usg" => DecisionTreeClassificationModel.load(modelPath)
+                case "usg" => PipelineModel.load(modelPath)
             }
         } else {
             // 2. 如果模型不存在训练模型，获取最佳模型及保存模型
@@ -41,6 +44,7 @@ object MLModelTools {
                 case "rfm" => trainBestKMeansModel(dataframe, 5)
                 case "rfe" => trainBestKMeansModel(dataframe, 4)
                 case "psm" => trainBestKMeansModel(dataframe, 5)
+                case "usg" => trainBestPipelineModel(dataframe)
             }
             
             // 保存模型
@@ -90,6 +94,66 @@ object MLModelTools {
         val (_, bestModel, _) = models.maxBy(tuple => tuple._1)
         
         // 4.返回最佳模型
+        bestModel
+    }
+    
+    /**
+      * 采用K-Fold交叉验证方式，调整超参数获取最佳PipelineModel模型
+      *
+      * @param dataframe 数据集
+      */
+    def trainBestPipelineModel(dataframe: DataFrame): PipelineModel = {
+        // a. 特征向量化
+        val assembler: VectorAssembler = new VectorAssembler()
+            .setInputCols(Array("color", "product"))
+            .setOutputCol("raw_features")
+        
+        // b. 类别特征进行索引
+        val indexer: VectorIndexer = new VectorIndexer()
+            .setInputCol("raw_features")
+            .setOutputCol("features")
+            .setMaxCategories(30)
+        
+        // .fit(dataframe)
+        // c. 构建决策树分类器
+        val dtc: DecisionTreeClassifier = new DecisionTreeClassifier()
+            .setFeaturesCol("features")
+            .setLabelCol("label")
+            .setPredictionCol("prediction")
+        
+        // d. 构建Pipeline管道流实例对象
+        val pipeline: Pipeline = new Pipeline().setStages(
+            Array(assembler, indexer, dtc)
+        )
+        
+        // e. 构建参数网格，设置超参数的值
+        val paramGrid: Array[ParamMap] = new ParamGridBuilder()
+            .addGrid(dtc.maxDepth, Array(5, 10))
+            .addGrid(dtc.impurity, Array("gini", "entropy"))
+            .addGrid(dtc.maxBins, Array(32, 64))
+            .build()
+        
+        // f. 多分类评估器
+        val evaluator = new MulticlassClassificationEvaluator()
+            .setLabelCol("label")
+            .setPredictionCol("prediction")
+            .setMetricName("accuracy")
+        
+        // is areaUnderROC.
+        val cv = new CrossValidator()
+            // 设置算法
+            .setEstimator(pipeline)
+            // 设置评估器
+            .setEvaluator(evaluator)
+            // 设置超参数网格
+            .setEstimatorParamMaps(paramGrid)
+            // 将数据集划分为几份，一份为测试集，K-1 为训练集
+            .setNumFolds(3)
+            .setParallelism(2)
+        
+        val cvModel = cv.fit(dataframe)
+        val bestModel = cvModel.bestModel.asInstanceOf[PipelineModel]
+        
         bestModel
     }
 }
