@@ -17,10 +17,12 @@
             <id>aliyun</id>
             <url>http://maven.aliyun.com/nexus/content/groups/public/</url>
         </repository>
+
         <repository>
             <id>cloudera</id>
             <url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
         </repository>
+
         <repository>
             <id>jboss</id>
             <url>http://repository.jboss.com/nexus/content/groups/public</url>
@@ -90,6 +92,13 @@
             <artifactId>hadoop-client</artifactId>
             <version>${hadoop.version}</version>
         </dependency>
+
+        <!-- ALS 依赖 -->
+        <!-- <dependency>-->
+        <!--     <groupId>com.github.fommil.netlib</groupId>-->
+        <!--     <artifactId>all</artifactId>-->
+        <!--     <version>1.1.2</version>-->
+        <!-- </dependency>-->
 
     </dependencies>
 
