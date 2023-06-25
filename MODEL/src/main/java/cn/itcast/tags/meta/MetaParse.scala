@@ -117,8 +117,25 @@ object MetaParse extends Logging {
                 // .filter(xxx)
                 spark.read.table(hiveMeta.hiveTable).select(hiveMeta.selectFieldNames: _*)
             case "hdfs" =>
-                null
+                /*
+                 * inType=hdfs
+                 * inPath=/apps/datas/tbl_tag_logs.tsv
+                 * sperator=\t
+                 * selectFieldNames=global_user_id,loc_url,log_time
+                 */
+                val hdfsMeta = HdfsMeta.getHdfsMeta(paramsMap)
+                
+                spark.read.format("csv")
+                    .option("header", "true")
+                    .option("sep", hdfsMeta.sperator)
+                    .option("inferSchema", "true")
+                    .csv(hdfsMeta.inPath)
+                    .select(hdfsMeta.selectFieldNames: _*)
             case "es" =>
+                null
+            case "redis" =>
+                null
+            case "kafka" =>
                 null
             case _ =>
                 // 如果未获取到数据，直接抛出异常
