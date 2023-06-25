@@ -94,12 +94,15 @@ object MetaParse extends Logging {
                  * password=000000
                  * sql=SELECT id,gender FROM tags_dat.tbl_users
                  */
-                // spark.read.format("jdbc")
-                //     .option()
+                val mySQLMeta = MySQLMeta.getMySQLMeta(paramsMap)
                 
-                
-                
-                null
+                spark.read.format("jdbc")
+                    .option("driver", mySQLMeta.driver)
+                    .option("url", mySQLMeta.url)
+                    .option("user", mySQLMeta.user)
+                    .option("password", mySQLMeta.password)
+                    .option("dbtable", mySQLMeta.sql)
+                    .load()
             case "hive" =>
                 null
             case "hdfs" =>
