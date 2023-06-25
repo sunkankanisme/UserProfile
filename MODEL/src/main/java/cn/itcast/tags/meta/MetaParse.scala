@@ -104,7 +104,18 @@ object MetaParse extends Logging {
                     .option("dbtable", mySQLMeta.sql)
                     .load()
             case "hive" =>
-                null
+                /*
+                 * inType=hive
+                 * hiveTable=tags_dat.tbl_logs
+                 * selectFieldNames=global_user_id,loc_url,log_time
+                 * # 分区字段及数据范围
+                 * whereCondition=log_time#day#30
+                 */
+                val hiveMeta = HiveMeta.getHiveMeta(paramsMap)
+                
+                // 将数组转为可变参数：hiveMeta.selectFieldNames: _*
+                // .filter(xxx)
+                spark.read.table(hiveMeta.hiveTable).select(hiveMeta.selectFieldNames: _*)
             case "hdfs" =>
                 null
             case "es" =>
